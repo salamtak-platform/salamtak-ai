@@ -1,9 +1,3 @@
-"""Core chatbot logic for Salamtak without Streamlit or local booking/admin UI.
-
-This module is intentionally stateless except for loading the medicines CSV and optional
-Gemini translation/polishing. The API layer owns per-client session state.
-"""
-
 from __future__ import annotations
 
 import json
