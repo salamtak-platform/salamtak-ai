@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create env file
+        run: cp .env.example .env
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Build Docker image
+        run: docker build -t salamtak-ai:ci .
+
+      - name: Smoke-test Docker container
+        run: |
+          docker run --rm -d --name salamtak-ai-ci --env-file .env -p 8000:8000 salamtak-ai:ci
+          for attempt in {1..20}; do
+            if curl -fsS http://localhost:8000/health; then
+              docker stop salamtak-ai-ci
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs salamtak-ai-ci
+          docker stop salamtak-ai-ci
+          exit 1

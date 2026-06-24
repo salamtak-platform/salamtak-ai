@@ -6,3 +6,5 @@ rapidfuzz>=3.0
 python-dotenv>=1.0
 google-genai>=0.6
 openpyxl>=3.1
+pytest>=8.0
+httpx>=0.27

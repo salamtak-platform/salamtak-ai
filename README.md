@@ -43,6 +43,31 @@ uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 GET http://localhost:8000/health
 ```
 
+## DevOps
+
+### التشغيل باستخدام Docker
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+curl http://localhost:8000/health
+docker compose down
+```
+
+الخدمة تعمل داخل الحاوية على `0.0.0.0:8000` ويتم نشرها محلياً على `http://localhost:8000`.
+
+### CI
+
+GitHub Actions موجود في `.github/workflows/ci.yml` ويعمل مع `push` و `pull_request`. الـ workflow يثبت Python 3.12، يثبت dependencies، ينشئ `.env` من `.env.example`، يشغل `pytest`، يبني Docker image، ثم يعمل smoke test على `/health` داخل الحاوية.
+
+### متغيرات البيئة
+
+لا يتم حفظ أي مفاتيح حقيقية داخل المستودع. استخدم `.env.example` كقالب فقط:
+
+- `GEMINI_API_KEY`: اختياري ويجب تحميله من البيئة أو `.env` محلياً فقط.
+- `GEMINI_MODEL`: اسم موديل Gemini المستخدم عند توفر المفتاح.
+- `MEDICINES_DATA_PATH`: مسار ملف بيانات الأدوية، والقيمة الافتراضية هي `egypt_common_100_medicines_chatbot.csv`.
+
 ## Endpoint الشات
 
 ```bash
