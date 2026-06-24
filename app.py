@@ -1,9 +1,3 @@
-"""FastAPI service for Salamtak chatbot.
-
-This replaces the old Streamlit UI. The service is designed to sit behind a Node.js
-backend used by Flutter and web clients.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -165,19 +159,6 @@ class SessionStateStore:
 SESSION_STORE = SessionStateStore()
 
 
-@app.get("/health")
-def health() -> Dict[str, Any]:
-    return {
-        "status": "error" if STARTUP_ERROR else "ok",
-        "app": APP_NAME,
-        "model": GEMINI_MODEL,
-        "medicines_source": MEDICINES_SOURCE,
-        "medicines_count": int(len(MEDICINES_DF)),
-        "active_sessions": SESSION_STORE.count(),
-        "startup_error": STARTUP_ERROR,
-    }
-
-
 @app.post("/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest) -> ChatResponse:
     if STARTUP_ERROR:
@@ -239,9 +220,4 @@ def chat(payload: ChatRequest) -> ChatResponse:
 @app.post("/sessions/{session_id}/close", response_model=ClearSessionResponse)
 def close_session(session_id: str) -> ClearSessionResponse:
     """Close a chat session and delete its temporary in-memory history and schedule."""
-    return ClearSessionResponse(session_id=session_id, cleared=SESSION_STORE.clear(session_id))
-
-
-@app.delete("/sessions/{session_id}", response_model=ClearSessionResponse)
-def clear_session(session_id: str) -> ClearSessionResponse:
     return ClearSessionResponse(session_id=session_id, cleared=SESSION_STORE.clear(session_id))
