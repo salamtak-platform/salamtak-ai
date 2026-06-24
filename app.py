@@ -105,7 +105,7 @@ class SessionStateStore:
                     "active_triage": None,
                     # Cached per-session doctor schedule. It is filled when the backend
                     # sends doctors_schedule for this session, reused on later messages,
-                    # and deleted when the session is closed/cleared.
+                    # and deleted when the session is closed.
                     "doctors_schedule": [],
                     "doctors_schedule_updated_at": None,
                 }
@@ -116,8 +116,8 @@ class SessionStateStore:
         """Cache the latest doctors schedule for this session only.
 
         The schedule is intentionally not persisted to a database. It lives only in
-        memory and is removed with the rest of the session when /close or DELETE is
-        called. If the backend sends an empty list, the previous cached schedule is
+        memory and is removed with the rest of the session when /close is called.
+        If the backend sends an empty list, the previous cached schedule is
         kept so follow-up doctor questions can still work during the same session.
         """
         with self._lock:

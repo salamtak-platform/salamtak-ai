@@ -33,12 +33,6 @@ cp .env.example .env
 uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-اختبار الصحة:
-
-```bash
-GET http://localhost:8000/health
-```
-
 ## DevOps
 
 ### التشغيل باستخدام Docker
@@ -46,7 +40,9 @@ GET http://localhost:8000/health
 ```bash
 cp .env.example .env
 docker compose up -d --build
-curl http://localhost:8000/health
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"باندول بيستخدم في ايه","language":"ar","doctors_schedule":[]}'
 docker compose down
 ```
 
@@ -54,7 +50,7 @@ docker compose down
 
 ### CI
 
-GitHub Actions موجود في `.github/workflows/ci.yml` ويعمل مع `push` و `pull_request`. الـ workflow يثبت Python 3.12، يثبت dependencies، ينشئ `.env` من `.env.example`، يشغل `pytest`، يبني Docker image، ثم يعمل smoke test على `/health` داخل الحاوية.
+GitHub Actions موجود في `.github/workflows/ci.yml` ويعمل مع `push` و `pull_request`. الـ workflow يثبت Python 3.12، يثبت dependencies، ينشئ `.env` من `.env.example`، يشغل `pytest`، يبني Docker image، ثم يعمل smoke test على `/chat` داخل الحاوية.
 
 ### متغيرات البيئة
 
@@ -177,12 +173,6 @@ console.log(data.reply);
 
 ```bash
 POST http://localhost:8000/sessions/user-123/close
-```
-
-أو:
-
-```bash
-DELETE http://localhost:8000/sessions/user-123
 ```
 
 بعد الإغلاق، لو المستخدم سأل عن دكتور بدون إرسال جدول جديد، سيرد الـ AI بأن جدول الدكاترة غير متاح في هذا السيشن.
