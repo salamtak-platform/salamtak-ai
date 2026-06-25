@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import re
 import threading
-import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
 
@@ -30,8 +29,8 @@ logger = logging.getLogger(APP_NAME_EN)
 
 app = FastAPI(
     title=f"{APP_NAME_EN} Chatbot API",
-    description="API-only chatbot service for Flutter/Web through a Node.js backend.",
-    version="2.2.0",
+    description="Salamtak AI chatbot API using patientId as the session id.",
+    version="2.3.0",
 )
 
 
@@ -56,7 +55,6 @@ else:
 
 
 def infer_language_from_message(message: str) -> Literal["ar", "en"]:
-    """Infer response language if backend does not send a language field."""
     arabic_chars = re.findall(r"[\u0600-\u06FF]", message or "")
     latin_chars = re.findall(r"[A-Za-z]", message or "")
 
@@ -67,7 +65,6 @@ def infer_language_from_message(message: str) -> Literal["ar", "en"]:
 
 
 def has_value(value: Any) -> bool:
-    """Check if a value is usable."""
     return value is not None and str(value).strip() not in {"", "None", "null", "nan"}
 
 
@@ -78,8 +75,6 @@ def compact_dict(row: Dict[str, Any]) -> Dict[str, Any]:
 def normalize_backend_doctors_context(
     doctors_context: Optional[List[Dict[str, Any]]]
 ) -> List[Dict[str, Any]]:
-    
-
     normalized_rows: List[Dict[str, Any]] = []
 
     for doctor in doctors_context or []:
@@ -250,23 +245,9 @@ def normalize_backend_doctors_context(
 
 
 class ChatRequest(BaseModel):
-    """Request body accepted from the Node.js backend.
-
-    Main backend fields:
-    - patientId
-    - message
-    - isNewChat
-    - doctorsContext
-
-    Optional:
-    - language: ar/en
-    - min_score
-    - top_k
-    """
-
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    patient_id: Optional[str] = Field(default=None, alias="patientId")
+    patient_id: str = Field(..., alias="patientId")
     message: str = Field(..., min_length=1)
     is_new_chat: bool = Field(default=False, alias="isNewChat")
     doctors_context: List[Dict[str, Any]] = Field(default_factory=list, alias="doctorsContext")
@@ -294,8 +275,6 @@ class ClearSessionResponse(BaseModel):
 
 
 class SessionStateStore:
-    """Temporary in-memory state per patient/session."""
-
     def __init__(self) -> None:
         self._lock = threading.RLock()
         self._sessions: Dict[str, Dict[str, Any]] = {}
@@ -318,7 +297,7 @@ class SessionStateStore:
     def update_doctors_schedule(
         self,
         patient_id: str,
-        doctors_schedule: List[Dict[str, Any]]
+        doctors_schedule: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
         with self._lock:
             state = self.get(patient_id)
@@ -384,22 +363,19 @@ SESSION_STORE = SessionStateStore()
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest) -> ChatResponse:
-    
-
     if STARTUP_ERROR:
         raise HTTPException(
             status_code=500,
             detail=f"Medicines data failed to load: {STARTUP_ERROR}",
         )
 
-    patient_id = payload.patient_id or uuid.uuid4().hex
+    patient_id = payload.patient_id
 
     language: Literal["ar", "en"] = (
         payload.language
         or infer_language_from_message(payload.message)
     )
 
-    
     if payload.is_new_chat:
         SESSION_STORE.clear(patient_id)
 
@@ -414,7 +390,6 @@ def chat(payload: ChatRequest) -> ChatResponse:
         )
 
     cached_doctors_schedule = state.get("doctors_schedule", [])
-
     doctors_df = standardize_doctors_schedule(cached_doctors_schedule)
 
     result = get_chatbot_reply(
@@ -468,8 +443,6 @@ def chat(payload: ChatRequest) -> ChatResponse:
 
 @app.post("/sessions/{patient_id}/close", response_model=ClearSessionResponse)
 def close_session(patient_id: str) -> ClearSessionResponse:
-    """Close a patient chat session and remove all temporary cached data."""
-
     return ClearSessionResponse(
         patientId=patient_id,
         cleared=SESSION_STORE.clear(patient_id),
