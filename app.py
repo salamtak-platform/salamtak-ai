@@ -29,8 +29,8 @@ logger = logging.getLogger(APP_NAME_EN)
 
 app = FastAPI(
     title=f"{APP_NAME_EN} Chatbot API",
-    description="Salamtak AI chatbot API using patientId as the session id.",
-    version="2.3.0",
+    description="Salamtak AI chatbot API. patientId is used as the session id.",
+    version="2.4.0",
 )
 
 
@@ -259,6 +259,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     patientId: str
+    session_id: str
     reply: str
     language: Literal["ar", "en"]
     intent: str
@@ -271,6 +272,7 @@ class ChatResponse(BaseModel):
 
 class ClearSessionResponse(BaseModel):
     patientId: str
+    session_id: str
     cleared: bool
 
 
@@ -423,6 +425,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
 
     return ChatResponse(
         patientId=patient_id,
+        session_id=patient_id,
         reply=reply,
         language=language,
         intent=str(result.get("intent", "unknown")),
@@ -445,5 +448,6 @@ def chat(payload: ChatRequest) -> ChatResponse:
 def close_session(patient_id: str) -> ClearSessionResponse:
     return ClearSessionResponse(
         patientId=patient_id,
+        session_id=patient_id,
         cleared=SESSION_STORE.clear(patient_id),
-    )
+            )
