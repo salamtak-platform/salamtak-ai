@@ -84,10 +84,10 @@ class ApiSessionScheduleTests(unittest.TestCase):
         first = client.post(
             "/chat",
             json={
-                "session_id": "session-cache-test",
+                "patientId": "session-cache-test",
                 "language": "ar",
                 "message": "عايز دكتور أطفال",
-                "doctors_schedule": schedule,
+                "doctorsContext": schedule,
                 "min_score": 35,
             },
         )
@@ -97,10 +97,10 @@ class ApiSessionScheduleTests(unittest.TestCase):
         second = client.post(
             "/chat",
             json={
-                "session_id": "session-cache-test",
+                "patientId": "session-cache-test",
                 "language": "ar",
                 "message": "طب في نفس الدكتور تاني؟",
-                "doctors_schedule": [],
+                "doctorsContext": [],
                 "min_score": 35,
             },
         )
@@ -114,10 +114,10 @@ class ApiSessionScheduleTests(unittest.TestCase):
         third = client.post(
             "/chat",
             json={
-                "session_id": "session-cache-test",
+                "patientId": "session-cache-test",
                 "language": "ar",
                 "message": "عايز دكتور أطفال",
-                "doctors_schedule": [],
+                "doctorsContext": [],
                 "min_score": 35,
             },
         )

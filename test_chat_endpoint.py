@@ -9,16 +9,17 @@ def test_chat_endpoint_returns_reply():
     response = client.post(
         "/chat",
         json={
-            "session_id": "chat-endpoint-test",
+            "patientId": "chat-endpoint-test",
             "message": "باندول بيستخدم في ايه",
             "language": "ar",
-            "doctors_schedule": [],
+            "doctorsContext": [],
             "min_score": 35,
         },
     )
 
     assert response.status_code == 200
     payload = response.json()
+    assert payload["patientId"] == "chat-endpoint-test"
     assert payload["session_id"] == "chat-endpoint-test"
     assert payload["language"] == "ar"
     assert payload["reply"]

@@ -10,7 +10,7 @@
 ## أهم تغيير في النسخة دي
 
 - داتا الأدوية تعتمد على ملف الداتا فقط: `egypt_common_100_medicines_chatbot.csv` أو المسار المحدد في `MEDICINES_DATA_PATH`.
-- الشات بقى multi-session عن طريق `session_id`، يعني كذا عميل يقدروا يستخدموا البوت في نفس الوقت بدون خلط في السياق.
+- الشات بقى multi-session عن طريق `patientId`، والـ response بيرجع كمان `session_id` بنفس القيمة للتوافق.
 - الردود تلتزم بلغة المستخدم المختارة من التطبيق: `ar` أو `en`.
 - جدول الدكاترة ممكن يوصل بعناوين عربية أو إنجليزية، والرد النهائي يترجم البيانات للغة المستخدم قدر الإمكان.
 
@@ -42,7 +42,7 @@ cp .env.example .env
 docker compose up -d --build
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message":"باندول بيستخدم في ايه","language":"ar","doctors_schedule":[]}'
+  -d '{"patientId":"demo-user","message":"باندول بيستخدم في ايه","language":"ar","doctorsContext":[]}'
 docker compose down
 ```
 
@@ -71,10 +71,10 @@ Content-Type: application/json
 
 ```json
 {
-  "session_id": "user-123",
+  "patientId": "user-123",
   "language": "ar",
   "message": "عايز ميعاد دكتور أطفال بكرة",
-  "doctors_schedule": [
+  "doctorsContext": [
     {
       "doctor_name": "Dr. Mona Khaled",
       "specialty": "Pediatrics",
@@ -93,10 +93,10 @@ Content-Type: application/json
 
 ```json
 {
-  "session_id": "user-456",
+  "patientId": "user-456",
   "language": "en",
   "message": "Do you have a dermatologist today?",
-  "doctors_schedule": [
+  "doctorsContext": [
     {
       "اسم الدكتور": "د. سارة علي",
       "التخصص": "جلدية",
@@ -115,6 +115,7 @@ Content-Type: application/json
 
 ```json
 {
+  "patientId": "user-123",
   "session_id": "user-123",
   "reply": "...",
   "language": "ar",
@@ -126,7 +127,9 @@ Content-Type: application/json
     "last_medicine": "",
     "last_symptom": "",
     "active_triage": null,
-    "recent_questions": ["عايز ميعاد دكتور أطفال بكرة"]
+    "recent_questions": ["عايز ميعاد دكتور أطفال بكرة"],
+    "doctors_schedule_cached_count": 1,
+    "doctors_schedule_updated_at": "2026-06-27T12:00:00+00:00"
   }
 }
 ```
@@ -136,8 +139,8 @@ Content-Type: application/json
 Node.js هو المسؤول عن:
 
 1. قراءة جدول الدكاترة من قاعدة البيانات.
-2. إرسال الجدول في `doctors_schedule` مع أول رسالة أو عند تغير الجدول. إذا لم يتغير الجدول يمكن إرسال `[]` في باقي رسائل نفس السيشن.
-3. تمرير `session_id` ثابت لكل مستخدم أو محادثة.
+2. إرسال الجدول في `doctorsContext` مع أول رسالة أو عند تغير الجدول. إذا لم يتغير الجدول يمكن إرسال `[]` في باقي رسائل نفس السيشن.
+3. تمرير `patientId` ثابت لكل مستخدم أو محادثة.
 4. حفظ الرسائل والحجوزات في قاعدة البيانات الخاصة بالباك.
 5. إرسال `language` حسب اختيار المستخدم في التطبيق أو صفحة الويب.
 
@@ -148,10 +151,10 @@ const response = await fetch("http://localhost:8000/chat", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    session_id: userSessionId,
+    patientId: userSessionId,
     language: userLanguage, // "ar" or "en"
     message: userMessage,
-    doctors_schedule: doctorsFromDatabase
+    doctorsContext: doctorsFromDatabase
   })
 });
 
@@ -161,10 +164,10 @@ console.log(data.reply);
 
 ## حفظ جدول الدكاترة داخل السيشن
 
-الـ AI يحتفظ بآخر `doctors_schedule` وصله لكل `session_id` داخل الذاكرة فقط. هذا يعني:
+الـ AI يحتفظ بآخر `doctorsContext` وصله لكل `patientId` داخل الذاكرة فقط. هذا يعني:
 
 - الباك يمكنه إرسال جدول الدكاترة أول مرة عند فتح الشات.
-- في الرسائل التالية داخل نفس `session_id` يمكنه إرسال `doctors_schedule: []`.
+- في الرسائل التالية داخل نفس `patientId` يمكنه إرسال `doctorsContext: []`.
 - الـ AI سيستخدم الجدول المحفوظ لنفس السيشن عند أسئلة المواعيد.
 - جدول كل مستخدم منفصل عن المستخدمين الآخرين.
 - عند إغلاق السيشن يتم حذف سجل المحادثة وجدول الدكاترة المحفوظ.

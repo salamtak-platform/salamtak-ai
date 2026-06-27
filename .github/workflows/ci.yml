@@ -38,7 +38,7 @@ jobs:
           for attempt in {1..20}; do
             if curl -fsS -X POST http://localhost:8000/chat \
               -H "Content-Type: application/json" \
-              -d '{"session_id":"ci-smoke-test","message":"باندول بيستخدم في ايه","language":"ar","doctors_schedule":[],"min_score":35}'; then
+              -d '{"patientId":"ci-smoke-test","message":"باندول بيستخدم في ايه","language":"ar","doctorsContext":[],"min_score":35}'; then
               docker stop salamtak-ai-ci
               exit 0
             fi
