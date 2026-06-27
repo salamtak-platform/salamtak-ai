@@ -1,4 +1,4 @@
-# Salamtak / سلامتك — API Version
+# .Salamtak / سلامتك — API Version
 
 نسخة API من شات بوت **سلامتك** بدون Streamlit. النسخة دي معمولة عشان تتربط مع:
 
